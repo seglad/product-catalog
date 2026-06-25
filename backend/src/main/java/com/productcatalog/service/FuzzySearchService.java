@@ -28,13 +28,14 @@ public class FuzzySearchService {
     public List<ProductResponse> search(String query, int distance) {
         return productRepository.findAll().stream()
             .map(product -> toScoredProduct(product, query, distance))
-            .filter(scored -> scored.score() != null)
-            .sorted(Comparator.comparingInt(ScoredProduct::score))
+            .filter(scored -> scored.score() != null) // drop non-matches
+            .sorted(Comparator.comparingInt(ScoredProduct::score)) // closest matches first
             .map(scored -> productService.toResponse(scored.product()))
             .toList();
     }
 
     private ScoredProduct toScoredProduct(Product product, String query, int distance) {
+        // Search across name, category, and description as one token stream
         String searchableText = String.join(" ",
             safe(product.getName()),
             safe(product.getCategory()),
