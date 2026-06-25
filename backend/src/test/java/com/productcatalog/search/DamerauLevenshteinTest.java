@@ -22,4 +22,10 @@ class DamerauLevenshteinTest {
     void supportsTranspositionAsSingleEdit() {
         assertEquals(1, distance.distance("roam", "roma"));
     }
+
+    @Test
+    void returnsTwoForTwoEdits() {
+        // "cabnet" → "cabinets" requires insert 'i' and insert 's'
+        assertEquals(2, distance.distance("cabnet", "cabinets"));
+    }
 }
