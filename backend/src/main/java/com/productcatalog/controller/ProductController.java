@@ -8,8 +8,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.NoSuchElementException;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -45,8 +47,11 @@ public class ProductController {
     }
 
     @GetMapping
-    @Operation(summary = "Get products with pagination")
-    public Page<ProductResponse> getProducts(@PageableDefault(size = 10) Pageable pageable) {
+    @Operation(summary = "Get products with pagination",
+        description = "Defaults: page=0, size=10, sort=name,asc")
+    public Page<ProductResponse> getProducts(
+        @ParameterObject @PageableDefault(size = 10, sort = "name", direction = Sort.Direction.ASC) Pageable pageable
+    ) {
         return productService.getProducts(pageable);
     }
 

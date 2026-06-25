@@ -20,6 +20,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -38,17 +39,22 @@ class ProductControllerTest {
     @Test
     void createsProduct() throws Exception {
         ProductResponse created = new ProductResponse(
-            1L, "Mouse", "Electronics", "Ergonomic mouse", new BigDecimal("29.99"), "https://example.com/mouse.jpg");
+            1L,
+            "Modern Sectional Sofa",
+            "Living Room",
+            "L-shaped fabric sofa with chaise lounge in charcoal grey",
+            new BigDecimal("899.00"),
+            "https://example.com/images/sectional-sofa.jpg");
 
         when(productService.createProduct(any())).thenReturn(created);
 
         String body = """
             {
-              "name": "Mouse",
-              "category": "Electronics",
-              "description": "Ergonomic mouse",
-              "price": 29.99,
-              "imageUrl": "https://example.com/mouse.jpg"
+              "name": "Modern Sectional Sofa",
+              "category": "Living Room",
+              "description": "L-shaped fabric sofa with chaise lounge in charcoal grey",
+              "price": 899.00,
+              "imageUrl": "https://example.com/images/sectional-sofa.jpg"
             }
             """;
 
@@ -57,7 +63,7 @@ class ProductControllerTest {
                 .content(body))
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.id").value(1))
-            .andExpect(jsonPath("$.name").value("Mouse"));
+            .andExpect(jsonPath("$.name").value("Modern Sectional Sofa"));
     }
 
     @Test
@@ -65,10 +71,10 @@ class ProductControllerTest {
         String body = """
             {
               "name": "",
-              "category": "Electronics",
-              "description": "desc",
-              "price": 10.00,
-              "imageUrl": "https://example.com/mouse.jpg"
+              "category": "Living Room",
+              "description": "L-shaped fabric sofa with chaise lounge in charcoal grey",
+              "price": 899.00,
+              "imageUrl": "https://example.com/images/sectional-sofa.jpg"
             }
             """;
 
@@ -81,14 +87,20 @@ class ProductControllerTest {
     @Test
     void returnsPagedProducts() throws Exception {
         ProductResponse product = new ProductResponse(
-            1L, "Keyboard", "Electronics", "Mechanical", new BigDecimal("80.00"), "https://example.com/keyboard.jpg");
-        when(productService.getProducts(eq(PageRequest.of(0, 1))))
-            .thenReturn(new PageImpl<>(List.of(product), PageRequest.of(0, 1), 1));
+            2L,
+            "Oak Coffee Table",
+            "Living Room",
+            "Solid oak coffee table with lower shelf storage",
+            new BigDecimal("249.99"),
+            "https://example.com/images/coffee-table.jpg");
+        PageRequest pageRequest = PageRequest.of(0, 1, Sort.by("name").ascending());
+        when(productService.getProducts(eq(pageRequest)))
+            .thenReturn(new PageImpl<>(List.of(product), pageRequest, 12));
 
         mockMvc.perform(get("/products?page=0&size=1"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.content[0].name").value("Keyboard"))
-            .andExpect(jsonPath("$.totalElements").value(1));
+            .andExpect(jsonPath("$.content[0].name").value("Oak Coffee Table"))
+            .andExpect(jsonPath("$.totalElements").value(12));
     }
 
     @Test
