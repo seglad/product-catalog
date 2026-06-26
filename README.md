@@ -28,6 +28,13 @@ App: `http://localhost:5173`
 
 The frontend calls the backend at `http://localhost:8080` by default (see `frontend/.env`). Start the backend first, then the frontend.
 
+### Tests
+
+```bash
+cd frontend
+npm test
+```
+
 ### Build for production
 
 ```bash
