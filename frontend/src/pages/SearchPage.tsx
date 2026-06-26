@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { searchProducts } from '../api/client';
+import { listProducts, searchProducts } from '../api/client';
 import { ProductCard } from '../components/ProductCard';
 import { SearchBar } from '../components/SearchBar';
 import type { Product } from '../types/product';
@@ -13,39 +13,64 @@ export function SearchPage() {
   const [error, setError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
 
-  // Debounce search: wait 300ms after the user stops typing before calling the API.
-  // Each keystroke clears the previous timer (cleanup) and starts a new one.
   useEffect(() => {
+    let cancelled = false;
     const trimmed = query.trim();
-
-    if (!trimmed) {
-      setProducts([]);
-      setLoading(false);
-      setError(null);
-      setHasSearched(false);
-      return;
-    }
 
     setLoading(true);
     setError(null);
 
+    if (!trimmed) {
+      setHasSearched(false);
+
+      listProducts()
+        .then((results) => {
+          if (!cancelled) {
+            setProducts(results);
+          }
+        })
+        .catch((err: unknown) => {
+          if (!cancelled) {
+            setProducts([]);
+            setError(err instanceof Error ? err.message : 'Failed to load products');
+          }
+        })
+        .finally(() => {
+          if (!cancelled) {
+            setLoading(false);
+          }
+        });
+
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    // Debounce search: wait 300ms after the user stops typing before calling the API.
     const timeoutId = window.setTimeout(() => {
       searchProducts(trimmed)
         .then((results) => {
-          setProducts(results);
-          setHasSearched(true);
+          if (!cancelled) {
+            setProducts(results);
+            setHasSearched(true);
+          }
         })
         .catch((err: unknown) => {
-          setProducts([]);
-          setHasSearched(true);
-          setError(err instanceof Error ? err.message : 'Search failed');
+          if (!cancelled) {
+            setProducts([]);
+            setHasSearched(true);
+            setError(err instanceof Error ? err.message : 'Search failed');
+          }
         })
         .finally(() => {
-          setLoading(false);
+          if (!cancelled) {
+            setLoading(false);
+          }
         });
     }, DEBOUNCE_MS);
 
     return () => {
+      cancelled = true;
       window.clearTimeout(timeoutId);
     };
   }, [query]);
@@ -55,11 +80,11 @@ export function SearchPage() {
       <h1 className="page-title">Find furniture</h1>
       <SearchBar value={query} onChange={setQuery} />
 
-      {!query.trim() && (
-        <p className="status-message">Search for furniture by name to see results.</p>
+      {loading && (
+        <p className="status-message">
+          {query.trim() ? 'Searching…' : 'Loading products…'}
+        </p>
       )}
-
-      {loading && <p className="status-message">Searching…</p>}
 
       {error && <p className="status-message status-message--error">{error}</p>}
 
